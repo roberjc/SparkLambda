@@ -1,0 +1,11 @@
+[0m[[0m[0minfo[0m] [0m[0mPackaging /home/roberto/git/spark/target/scala-2.11/tfm_2.11-0.1.jar ...[0m
+[0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/spark/target/scala-2.11/classes/KafkaConnection[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/SparkKafkaConnection$delayedInit$body.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/spark/target/scala-2.11/classes/KafkaConnection/SparkKafkaConnection$delayedInit$body.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/SparkKafkaConnection.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/spark/target/scala-2.11/classes/KafkaConnection/SparkKafkaConnection.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/SparkKafkaConnection$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/spark/target/scala-2.11/classes/KafkaConnection/SparkKafkaConnection$.class[0m
+[0m[[0m[0minfo[0m] [0m[0mDone packaging.[0m
