@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Dataset, SparkSession}
 import org.apache.spark.sql.execution.streaming.FileStreamSource.Timestamp
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.streaming._
@@ -12,7 +12,7 @@ import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka010._
 import org.apache.spark.sql.functions.{explode, split}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.functions.{from_json, get_json_object, json_tuple}
+import org.apache.spark.sql.functions.{from_json, get_json_object, json_tuple, to_json}
 import org.apache.spark.sql.streaming.ProcessingTime
 
   object SparkKafkaConnection extends App {
@@ -47,40 +47,56 @@ import org.apache.spark.sql.streaming.ProcessingTime
     var df = ss
       .readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", "http://172.17.0.2:9092")
+      .option("kafka.bootstrap.servers", "http://localhost:9092")
       .option("subscribe", "testtopic")
       .option("startingOffsets", "earliest")
       .load()
 
     df.printSchema()
 
-
     val schema = new StructType()
       .add("schema", StringType)
-      .add("payload", StringType)
+      .add("payload", BinaryType)
+
+    val schema2 = new StructType()
+      .add("device_id", IntegerType)
+      .add("event_time", TimestampType)
+      .add("measures",
+        new StructType()
+          .add("temperature", DoubleType)
+          .add("humidity", IntegerType)
+      )
+
+
 
     /*
-    val schema = StructType(Seq(
-      StructField("schema", StringType, true),
-      StructField("payload", StringType, true)
-    ))
-    */
+    val df1 = df.selectExpr("cast (value as string) as kafkaJson")
+      .select(from_json($"kafkaJson", schema=schema).as("data")).select($"data.payload".as[Array[Byte]])
+      .map({data =>
+        new String(data, StandardCharsets.UTF_8)
+    })//.as("json").select(from_json($"json", schema=schema2).as("parsed")).select($"parsed.temperature")
+*/
 
-    import org.apache.commons.codec.binary.Base64
-    val base64 = "data:([a-z]+);base64,(.*)".r
-    def decodeBase64 (src: String): Option[(String, Array[Byte])] = {
-      src match {
-        case base64(mimetype, data) => Some( (mimetype, Base64.decodeBase64(data.getBytes("utf-8"))) )
-        case _ => None
-      }
-    }
-
-    val df1 = df.selectExpr("cast (value as string) as json")
-      .select(from_json($"json", schema=schema).as("data")).select("data.payload")
-      .map(row => new String(row.toString().getBytes("UTF-8"), StandardCharsets.UTF_8))
-      //.map(data => decodeBase64(data.get(0).toString))
+    import org.apache.spark.sql.functions._
 
 
+    val df1 = df.selectExpr("cast (value as string) as kafkaJson")
+      .select(from_json($"kafkaJson", schema=schema).as("data")).select($"data.payload".as[Array[Byte]])
+      .map({data =>
+        new String(data, StandardCharsets.UTF_8)
+      })
+      .select(get_json_object(($"value").cast("string"), "$.device_id").alias("device_id")
+      , get_json_object(($"value").cast("string"), "$.event_time").alias("event_time")
+      , get_json_object(($"value").cast("string"), "$.measures.temperature").alias("temperature")
+        , get_json_object(($"value").cast("string"), "$.measures.humidity").alias("humidity"))
+      .groupBy($"device_id").count()
+
+
+
+      //df1.select(($"value", schema=schema2).as("parsed")).select("parsed.*")//.select($"parsed.event_time")
+
+
+    println(df1.printSchema())
 
     /*
     val df1 = df.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
@@ -92,6 +108,7 @@ import org.apache.spark.sql.streaming.ProcessingTime
       df1
         .writeStream
         .format("console")
+        .outputMode("complete")
         .start()
 
     query.awaitTermination()

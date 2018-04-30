@@ -1,1 +1,19 @@
-[0m[[0m[0mdebug[0m] [0m[0mJar uptodate: /home/roberto/git/sparkLambda/target/scala-2.11/tfm_2.11-0.1.jar[0m
+[0m[[0m[0minfo[0m] [0m[0mPackaging /home/roberto/git/SparkLambda/target/scala-2.11/tfm_2.11-0.1.jar ...[0m
+[0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/SparkKafkaConnection.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/SparkLambda/target/scala-2.11/classes/KafkaConnection/SparkKafkaConnection.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/ConsumerExample.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/SparkLambda/target/scala-2.11/classes/KafkaConnection/ConsumerExample.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/SparkKafkaConnection$delayedInit$body.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/SparkLambda/target/scala-2.11/classes/KafkaConnection/SparkKafkaConnection$delayedInit$body.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/SparkKafkaConnection$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/SparkLambda/target/scala-2.11/classes/KafkaConnection/SparkKafkaConnection$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/SparkLambda/target/scala-2.11/classes/KafkaConnection[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/SparkKafkaConnection$$anonfun$1.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/SparkLambda/target/scala-2.11/classes/KafkaConnection/SparkKafkaConnection$$anonfun$1.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/ConsumerExample$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/SparkLambda/target/scala-2.11/classes/KafkaConnection/ConsumerExample$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	KafkaConnection/ConsumerExample$$anonfun$main$1.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/roberto/git/SparkLambda/target/scala-2.11/classes/KafkaConnection/ConsumerExample$$anonfun$main$1.class[0m
+[0m[[0m[0minfo[0m] [0m[0mDone packaging.[0m
