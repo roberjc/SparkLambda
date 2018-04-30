@@ -16,5 +16,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" % "spark-streaming-kafka-0-10_2.11" % sparkVersion,
   "com.typesafe.play" % "play-json_2.11" % "2.4.6",
   "org.eclipse.paho" % "org.eclipse.paho.client.mqttv3" % "1.2.0",
-  "com.databricks" %% "spark-avro" % "4.0.0"
+  "com.databricks" %% "spark-avro" % "4.0.0",
+  "org.apache.kafka" % "kafka_2.11" % "0.11.0.0",
+  "org.apache.kafka" % "connect-api" % "1.1.0"
 )

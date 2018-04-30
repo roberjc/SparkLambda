@@ -1,8 +1,11 @@
 package KafkaConnection
 
+import java.nio.charset.StandardCharsets
+
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.streaming.FileStreamSource.Timestamp
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.dstream.DStream
@@ -44,15 +47,49 @@ import org.apache.spark.sql.streaming.ProcessingTime
     var df = ss
       .readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", "http://localhost:9092")
+      .option("kafka.bootstrap.servers", "http://172.17.0.2:9092")
       .option("subscribe", "testtopic")
       .option("startingOffsets", "earliest")
       .load()
 
-    df.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)")
+    df.printSchema()
+
+
+    val schema = new StructType()
+      .add("schema", StringType)
+      .add("payload", StringType)
+
+    /*
+    val schema = StructType(Seq(
+      StructField("schema", StringType, true),
+      StructField("payload", StringType, true)
+    ))
+    */
+
+    import org.apache.commons.codec.binary.Base64
+    val base64 = "data:([a-z]+);base64,(.*)".r
+    def decodeBase64 (src: String): Option[(String, Array[Byte])] = {
+      src match {
+        case base64(mimetype, data) => Some( (mimetype, Base64.decodeBase64(data.getBytes("utf-8"))) )
+        case _ => None
+      }
+    }
+
+    val df1 = df.selectExpr("cast (value as string) as json")
+      .select(from_json($"json", schema=schema).as("data")).select("data.payload")
+      .map(row => new String(row.toString().getBytes("UTF-8"), StandardCharsets.UTF_8))
+      //.map(data => decodeBase64(data.get(0).toString))
+
+
+
+    /*
+    val df1 = df.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
+     .select($"key", from_json($"value", schema).as("data"))
+     .select("key", "data.*")
+     */
 
     val query =
-      df
+      df1
         .writeStream
         .format("console")
         .start()
