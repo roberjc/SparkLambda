@@ -18,5 +18,6 @@ libraryDependencies ++= Seq(
   "org.eclipse.paho" % "org.eclipse.paho.client.mqttv3" % "1.2.0",
   "com.databricks" %% "spark-avro" % "4.0.0",
   "org.apache.kafka" % "kafka_2.11" % "0.11.0.0",
-  "org.apache.kafka" % "connect-api" % "1.1.0"
+  "org.apache.kafka" % "connect-api" % "1.1.0",
+  "org.scalaj" %% "scalaj-http" % "2.4.0"
 )
