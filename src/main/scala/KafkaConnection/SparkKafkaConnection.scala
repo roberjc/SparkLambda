@@ -11,6 +11,7 @@ import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.expressions.scalalang.typed
 import java.io.File
 import java.io.PrintWriter
+import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import play.api.libs.json.{JsNumber, JsObject, JsString, JsValue}
@@ -29,7 +30,8 @@ import scalaj.http.{Http, HttpOptions}
     // Init Spark config
     val sc = new SparkConf()
       .setMaster("local[2]")
-      .setAppName("Spark-Kafka-conn")
+      //.setMaster("yarn")
+      .setAppName("Sensor-Streaming")
 
     // Init Spark session
     val ss = SparkSession
@@ -46,7 +48,7 @@ import scalaj.http.{Http, HttpOptions}
     var df = ss
       .readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", "http://localhost:9092")
+      .option("kafka.bootstrap.servers", "192.168.0.147:9092,192.168.0.148:9093,192.168.0.149:9094")
       .option("subscribe", "testtopic")
       .option("startingOffsets", "latest") //earliest
       .load()
@@ -68,11 +70,9 @@ import scalaj.http.{Http, HttpOptions}
       , get_json_object(($"value").cast("string"), "$.measures.temperature").alias("temperature").cast("Double")
       , get_json_object(($"value").cast("string"), "$.measures.humidity").alias("humidity").cast("Int"))
       //.withColumn("event_time", to_timestamp(from_unixtime(unix_timestamp($"event_time", "dd-MM-yyyy HH:mm:ss"), "dd-MM-yyyy HH:mm:ss")))
-      .withColumn("event_time", from_unixtime(unix_timestamp($"event_time", "dd-MM-yyyy HH:mm:ss"), "dd-MM-yyyy HH:mm:ss"))
-      .withColumn("time", from_unixtime(unix_timestamp($"event_time", "dd-MM-yyyy HH:mm:ss"), "HH:mm").cast(TimestampType)).alias("time")
+      .withColumn("event_time", from_unixtime(unix_timestamp($"event_time", "dd-MM-yyyy HH:mm:ss")).cast(TimestampType))
+      //.withColumn("time", from_unixtime(unix_timestamp($"event_time", "dd-MM-yyyy HH:mm:ss"), "HH:mm:ss").cast(TimestampType)).alias("time")
       .as[DeviceData]
-
-
 
 /*
     wds
@@ -114,10 +114,10 @@ val query = ds
 
     // Process data to calculate aggregation
     val wds = ds
-      .withColumn("time", to_timestamp($"time"))
-      .withWatermark("time", "40 seconds")
+      .withColumn("event_time", to_timestamp($"event_time"))
+      .withWatermark("event_time", "40 seconds")
       .groupBy(
-        window($"time", "30 seconds"), $"sector_id")
+        window($"event_time", "30 seconds"), $"sector_id")
         .agg(
           mean("temperature").alias("mean"),
           count(lit(1)).alias("records")
@@ -135,24 +135,26 @@ val query = ds
 
     val accum = ss.sparkContext.collectionAccumulator[Int]
     var content = "{\"results\":{\"properties\":["
-    var filePath = "/home/roberto/Descargas/json-server/db.json"
+    var filePath = "/home/result/db.json"
     var times = 0
-    val url = "http://localhost:3000/properties/"
+    //val url = "http://192.168.0.196:3000/properties/"
 
-    def buildProperties(sectorId: BigDecimal, mean: BigDecimal, records: BigDecimal): String ={
+    def buildProperties(sectorId: BigDecimal, mean: BigDecimal, records: BigDecimal, date: String, time: String): String ={
       JsObject(
         Seq(
           "id" -> JsNumber(sectorId),
           "mean" -> JsNumber(mean),
-          "records" -> JsNumber(records))
+          "records" -> JsNumber(records),
+          "date" -> JsString(date),
+          "time" -> JsString(time))
       ).toString()
     }
-
     def save(url: String, json: String): Unit ={
       Http(url).postData(json)
         .header("Content-Type", "application/json")
         .header("Charset", "UTF-8")
-        .option(HttpOptions.readTimeout(10000)).asString
+        .option(HttpOptions.connTimeout(1000000))
+        .option(HttpOptions.readTimeout(5000000)).asString
     }
 
     wds
@@ -161,30 +163,28 @@ val query = ds
 
         override def process(row: Row): Unit = {
           println(s">> Procesando ${row}")
+          val url = "http://192.168.0.196:3000/properties/"
 
           var sectorId = BigDecimal(row.getAs("sector_id").toString)
-          var mean = BigDecimal(row.getAs("mean").toString)
+          var mean = BigDecimal(row.getAs("mean").toString).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
           var records = BigDecimal(row.getAs("records").toString)
 
-          save(url, json = buildProperties(sectorId, mean, records))
+          val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+          val cal = Calendar.getInstance
+          cal.setTime(sdf.parse(row.getTimestamp(0).toString))
+          var calendarTime = cal.getTime()
+
+          val date = new SimpleDateFormat("dd-MM-yyyy").format(calendarTime)
+          val time = new SimpleDateFormat("HH:mm").format(calendarTime)
+
+          save(url, json = buildProperties(sectorId, mean, records, date, time))
 
           /*
           if(content.endsWith("]}}")){
             content = content.substring(0, content.length() - 3).concat(",")
-          }
+        }
 
-          var sector_id = BigDecimal(row.getAs("sector_id").toString)
-          var mean = BigDecimal(row.getAs("mean").toString)
-          var records = BigDecimal(row.getAs("records").toString)
-
-          val props = JsObject(
-            Seq(
-              "sector_id" -> JsNumber(sector_id),
-              "mean" -> JsNumber(mean),
-              "records" -> JsNumber(records))
-            ).toString()
-
-          content = content.concat(props).concat("]}}")
+          content = content.concat(buildProperties(sectorId, mean, records)).concat("]}}")
 
           val writer = new PrintWriter(new File(filePath))
 
