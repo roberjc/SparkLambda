@@ -1,4 +1,4 @@
-package KafkaConnection
+package model
 
 import java.sql.Timestamp
 
