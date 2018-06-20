@@ -1,4 +1,4 @@
-# TFM - Roberto Jiménez
+# TFM Máster Arquitectura Big Data - Roberto Jiménez
 
 El proyecto trata de dar solución a la necesidad de conocer en tiempo real la temperatura de todos los sectores que componen una parcela de cultivo.
 Para ello se lleva a cabo la recolección de datos provenientes de sensores, su procesado para obtener una medición media por sector y la monitorización en un mapa de calor.
@@ -40,41 +40,32 @@ Spark comienza una ETL por la lectura del topic de Kafka que porta los datos y a
 El flujo sigue con las siguientes etapas de carga: Raw y Procesado.
 Para la primera etapa, Raw, los datos se persisten una vez modelados en el sistema HDFS, de esta manera siempre se podrá llegar a cualquier estado de procesamiento posterior.
 
-La segunda etapa de carga realiza un procesamiento sobre los datos para obtener valor, de modo que establece ventanas de 30 segundos en las que agrupa los datos por su fecha de generación y el sector al que pertenecen. Sobre estas ventanas calcula una media de las temperaturas por sector y cuenta el número de registros con los que ha obtenido el cálculo. Se establece una marca de agua de hasta 40 segundos, para que aquellos datos que lleguen con hasta 10 segundos de retraso se contemplen en su correspondiente ventana. *****
+La segunda etapa de carga realiza un procesamiento sobre los datos para obtener valor, de modo que establece ventanas de 30 segundos en las que agrupa los datos por su fecha de generación y el sector al que pertenecen. Sobre estas ventanas calcula una media de las temperaturas por sector y cuenta el número de registros con los que ha obtenido el cálculo. Se establece una marca de agua de hasta 40 segundos, para que los datos que lleguen con retraso se contemplen en su correspondiente ventana.
 Una vez procesados los datos, éstos llegan al final de la segunda etapa de carga, la cual se trata de un microservicio que persiste los datos de forma temporal en un fichero con formato JSON.
 Dicho API es consultado por la vista final en forma de mapa, el cual se carga con la información recogida y se actualiza conforme los datos son reprocesados.
 
-# Modelo de datos
-//TODO
-
-### Tecnologías
-
-El proyecto utiliza una serie de proyectos Open Source para funcionar:
-
-//TODO
-
 ### Despliegue
 
-El proyecto requiere SBT y Docker para ejecutarse y SSH para copiarlo al cluster.
+El proyecto requiere SBT y Docker para ejecutarse y SSH para copiarlo al cluster, entre otras cosas.
 
 Para levantar los servicios del cluster:
 ```sh
 $ ssh root@master
-$ sh /start-cluster.sh
+$ sh start-cluster.sh
 ```
 
 Para el Job de Spark:
 ```sh
 $ cd real-time-spark
 $ sbt package
-$ scp target/scala/scala-2.11/*** root@master:/home/testing
+$ scp target/scala/scala-2.11/tfm_2.11-0.1.jar root@master:<directorio_ejecucion>
 ```
 
 Para el microservicio al que hace peticiones el mapa:
 ```sh
 $ docker pull williamyeh/json-server
-$ touch /home/<usuario>/TFM/db.json
-$ docker run -p 3000:3000 -v /home/<usuario>/TFM/:/data williamyeh/json-server --watch db.json
+$ touch <directorio_usuario>/db.json
+$ docker run -p 3000:3000 -v <directorio_usuario>/:/data williamyeh/json-server --watch db.json
 ```
 
 ### Ejecución
@@ -84,7 +75,7 @@ El proyecto requiere SBT y Docker para ejecutarse y SSH para copiarlo al cluster
 Para el Job de Spark:
 ```sh
 $ ssh root@master
-$ sh /run/run.sh
+$ sh run.sh
 ```
 Para producir mensajes de sensores:
 ```sh
@@ -98,17 +89,17 @@ $ docker ps -a
 $ docker start <id-contenedor>
 ```
 
-### Plugins
+### Componentes
 
-Dillinger is currently extended with the following plugins. Instructions on how to use them in your own application are linked below.
+La aplicación hace uso de una serie de componentes para distintas funciones:
 
-| Plugin | README |
-| ------ | ------ |
-| real-time-spark | [plugins/dropbox/README.md][PlDb] |
-| real-time-sensor | [plugins/github/README.md][PlGh] |
-| real-time-map | [plugins/googledrive/README.md][PlGd] |
-
-
+* [clush] - Lanzar comandos a lo largo del cluster
+* [typesafe-config] - Establecer variables de configuración del entorno
+* [scalaj] - Realizar peticiones HTTP
+* [paho] - Implementar sensores MQTT
+* [play] - Gestionar formato JSON
+* [spark] - Procesar el flujo streaming
+* [kafka] - Distribuir mensajes
 
 Verifica que funcione la ejecución navegando desde el navegador a la dirección:
 
@@ -117,24 +108,7 @@ https://htmlpreview.github.io/?https://github.com/roberjc/real-time-map/blob/mas
 ```
 
 
-**Máster Arquitectura Big Data - Roberto Jiménez**
-
-[//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
-
-
-   [dill]: <https://github.com/joemccann/dillinger>
-   [git-repo-url]: <https://github.com/joemccann/dillinger.git>
-   [john gruber]: <http://daringfireball.net>
-   [df1]: <http://daringfireball.net/projects/markdown/>
-   [markdown-it]: <https://github.com/markdown-it/markdown-it>
-   [Ace Editor]: <http://ace.ajax.org>
-   [node.js]: <http://nodejs.org>
-   [Twitter Bootstrap]: <http://twitter.github.com/bootstrap/>
-   [jQuery]: <http://jquery.com>
-   [@tjholowaychuk]: <http://twitter.com/tjholowaychuk>
-   [express]: <http://expressjs.com>
-   [AngularJS]: <http://angularjs.org>
-   [Gulp]: <http://gulpjs.com>
+**TFM Máster Arquitectura Big Data - Roberto Jiménez**
 
    [PlDb]: <https://github.com/joemccann/dillinger/tree/master/plugins/dropbox/README.md>
    [PlGh]: <https://github.com/joemccann/dillinger/tree/master/plugins/github/README.md>
@@ -142,3 +116,11 @@ https://htmlpreview.github.io/?https://github.com/roberjc/real-time-map/blob/mas
    [PlOd]: <https://github.com/joemccann/dillinger/tree/master/plugins/onedrive/README.md>
    [PlMe]: <https://github.com/joemccann/dillinger/tree/master/plugins/medium/README.md>
    [PlGa]: <https://github.com/RahulHP/dillinger/blob/master/plugins/googleanalytics/README.md>
+   [clush]: <http://clustershell.readthedocs.io/en/latest/tools/clush.html>
+   [typesafe-config]: <https://github.com/lightbend/config/blob/master/README.md>
+   [scalaj]: <https://github.com/scalaj/scalaj-http/blob/master/README.md>
+   [paho]: <https://github.com/eclipse/paho.mqtt.java/blob/master/README.md>
+   [play]: <https://github.com/playframework/play-json/blob/master/README.md>
+   [spark]: <https://spark.apache.org/>
+   [kafka]: <https://kafka.apache.org/>
+
